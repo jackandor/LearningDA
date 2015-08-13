@@ -14,7 +14,8 @@ axis(1, 1:length(i100$Date), labels=i100$Date)
 
 i100$FixRate <- i100$Close/i100$Net
 dev.new()
-plot(i100$FixRate)
+plot(i100$FixRate, xaxt='n', xlab='Date', ylab='Rate')
+axis(1, 1:length(i100$Date), labels=i100$Date)
 
 start <- 1
 i100$IndexIncome <- (i100$Close / i100[start, 'Close'] - 1) * 100
@@ -22,7 +23,7 @@ i100$FundIncome <- (i100$Net /i100[start, 'Net'] - 1) * 100
 max4p <- max(i100$IndexIncome, i100$FundIncome)
 min4p <- min(i100$IndexIncome, i100$FundIncome)
 dev.new()
-plot(i100$IndexIncome, type='b', col='red', xaxt='n', xlab='Date', ylab='Rate', ylim=c(min4p, max4p))
+plot(i100$IndexIncome, type='b', col='red', xaxt='n', xlab='Date', ylab='Income', ylim=c(min4p, max4p))
 lines(i100$FundIncome, type='b', col='blue')
 axis(1, 1:length(i100$Date), labels=i100$Date)
 
