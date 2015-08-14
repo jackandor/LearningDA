@@ -1,4 +1,5 @@
 i100 <- read.table("i100.csv", sep=',', header=TRUE, stringsAsFactors=FALSE)
+i100 <- na.omit(i100)
 i100$Date <- as.Date(i100$Date, "%Y/%m/%d")
 i100 <- i100[order(i100$Date),]
 
