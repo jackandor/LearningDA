@@ -6,6 +6,7 @@ i100 <- na.omit(i100)
 tj100 <- read.table("tj100.csv", sep=',', header=TRUE, stringsAsFactors=FALSE)
 tj100$Date <- as.Date(tj100$Date, "%Y-%m-%d")
 tj100 <- tj100[order(tj100$Date),]
+tj100 <- na.omit(tj100)
 
 cmp_df <- merge(i100, tj100, by='Date')
 
