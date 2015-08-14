@@ -1,4 +1,3 @@
-setwd('/Users/jack/Development/R/LearningDA')
 tj100 <- read.table("tj100.csv", sep=',', header=TRUE, stringsAsFactors=FALSE)
 tj100$Date <- as.Date(tj100$Date, "%Y-%m-%d")
 tj100 <- tj100[order(tj100$Date),]
