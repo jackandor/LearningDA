@@ -27,6 +27,6 @@ plot(hs300$IndexIncome, type='b', col='red', xaxt='n', xlab='Date', ylab='Income
 lines(hs300$FundIncome, type='b', col='blue')
 axis(1, 1:length(hs300$Date), labels=hs300$Date)
 
-mean(abs(hs300$FundRate) - abs(hs300$IndexRate))
-sd(abs(hs300$FundRate) - abs(hs300$IndexRate))
+mean(hs300$FundRate - hs300$IndexRate)
+sd(hs300$FundRate - hs300$IndexRate)
 
