@@ -27,3 +27,7 @@ plot(i100$IndexIncome, type='b', col='red', xaxt='n', xlab='Date', ylab='Income'
 lines(i100$FundIncome, type='b', col='blue')
 axis(1, 1:length(i100$Date), labels=i100$Date)
 
+startDate <- as.Date('2015-06-03', '%Y-%m-%d')
+tmp_i100 <- i100[which(i100$Date >= startDate),]
+mean(abs(tmp_i100$FundRate) - abs(tmp_i100$IndexRate))
+sd(abs(tmp_i100$FundRate) - abs(tmp_i100$IndexRate))
