@@ -29,5 +29,5 @@ axis(1, 1:length(tj100$Date), labels=tj100$Date)
 
 startDate <- as.Date('2015-06-02', '%Y-%m-%d')
 tmp_tj100 <- tj100[which(tj100$Date >= startDate),]
-mean(tmp_tj100$FundRate - tmp_tj100$IndexRate)
-sd(tmp_tj100$FundRate - tmp_tj100$IndexRate)
+print(mean(tmp_tj100$FundRate - tmp_tj100$IndexRate))
+print(sd(tmp_tj100$FundRate - tmp_tj100$IndexRate))
