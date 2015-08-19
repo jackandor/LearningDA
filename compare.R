@@ -2,12 +2,10 @@ library(reshape)
 
 i100 <- read.table("i100.csv", sep=',', header=TRUE, stringsAsFactors=FALSE)
 i100$Date <- as.Date(i100$Date, "%Y/%m/%d")
-i100 <- na.omit(i100)
 i100 <- rename(i100, c(Close="i100_close", Net="i100_net"))
 
 tj100 <- read.table("tj100.csv", sep=',', header=TRUE, stringsAsFactors=FALSE)
 tj100$Date <- as.Date(tj100$Date, "%Y-%m-%d")
-tj100 <- na.omit(tj100)
 tj100 <- rename(tj100, c(Close="tj100_close", Net="tj100_net"))
 
 hs300 <- read.table("hs300.csv", sep=',', header=TRUE, stringsAsFactors=FALSE)
@@ -18,7 +16,7 @@ ss000001 <- read.table("ss000001.csv", sep=',', header=TRUE, stringsAsFactors=FA
 ss000001$Date <- as.Date(ss000001$Date, "%Y-%m-%d")
 ss000001 <- rename(ss000001, c(Close="ss000001_close"))
 
-candidate <- read.table("candidate.csv", sep=',', header=TRUE, stringsAsFactors=FALSE)
+candidate <- read.table("candidate_210004.csv", sep=',', header=TRUE, stringsAsFactors=FALSE)
 candidate$Date <- as.Date(candidate$Date, "%Y-%m-%d")
 candidate <- rename(candidate, c(Net="candidate_net"))
 
@@ -27,6 +25,8 @@ cmp_df <- merge(i100, tj100, by='Date')
 cmp_df <- merge(cmp_df, hs300, by='Date')
 cmp_df <- merge(cmp_df, ss000001, by='Date')
 cmp_df <- merge(cmp_df, candidate, by='Date')
+
+cmp_df <- na.omit(cmp_df)
 
 cmp_df <- cmp_df[order(cmp_df$Date),]
 
