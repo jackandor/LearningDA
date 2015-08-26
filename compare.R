@@ -16,7 +16,7 @@ ss000001 <- read.table("ss000001.csv", sep=',', header=TRUE, stringsAsFactors=FA
 ss000001$Date <- as.Date(ss000001$Date, "%Y-%m-%d")
 ss000001 <- rename(ss000001, c(Close="ss000001_close"))
 
-candidate <- read.table("candidate_210004.csv", sep=',', header=TRUE, stringsAsFactors=FALSE)
+candidate <- read.table("candidate_540003.csv", sep=',', header=TRUE, stringsAsFactors=FALSE)
 candidate$Date <- as.Date(candidate$Date, "%Y-%m-%d")
 candidate <- rename(candidate, c(Net="candidate_net"))
 
