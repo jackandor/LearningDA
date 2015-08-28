@@ -26,7 +26,7 @@ preprocess <- function(filename, dateformat='%Y-%m-%d', index=FALSE, fund=TRUE) 
   return(df)
 }
 
-plot_index_and_fund <- function(name, df, start=1) {
+stat_index_and_fund <- function(name, df, startDate=df[1, "Date"]) {
   index_rate <- paste(name, 'index', 'rate', sep='_')
   fund_rate <- paste(name[[1]][1], 'fund', 'rate', sep='_')
   df <- na.omit(df)
@@ -45,22 +45,27 @@ plot_index_and_fund <- function(name, df, start=1) {
 
   index_income <- paste(name, 'index', 'income', sep='_')
   fund_income <- paste(name, 'fund', 'income', sep='_')
-  df[,index_income] <- (df[,close] / df[start, close] - 1) * 100
-  df[,fund_income] <- (df[,net] / df[start, net] - 1) * 100
-  max4p <- max(df[,index_income], df[,fund_income])
-  min4p <- min(df[,index_income], df[,fund_income])
+  df_index_income <- (df[which(df[,"Date"] >= startDate), close] / df[which(df[,"Date"] == startDate), close] - 1) * 100
+  df_fund_income <- (df[which(df[,"Date"] >= startDate), net] / df[which(df[,"Date"] == startDate), net] - 1) * 100
+  df_date <- df[which(df[,"Date"] >= startDate),"Date"]
+  max4p <- max(df_index_income, df_fund_income)
+  min4p <- min(df_index_income, df_fund_income)
   dev.new()
-  plot(df[,index_income], type='b', col='red', xaxt='n', xlab='Date', ylab='Income', ylim=c(min4p, max4p))
-  lines(df[,fund_income], type='b', col='blue')
-  axis(1, 1:length(df$Date), labels=df$Date)
+  plot(df_index_income, type='b', col='red', xaxt='n', xlab='Date', ylab='Income', ylim=c(min4p, max4p))
+  lines(df_fund_income, type='b', col='blue')
+  axis(1, 1:length(df_date), labels=df_date)
+
+  tmp <- df[which(df[,"Date"] >= startDate),fund_rate] - df[which(df[,"Date"] >= startDate),index_rate]
+  print(paste(name, 'mean is', mean(tmp)))
+  print(paste(name, 'sd is', sd(tmp)))
 }
 
 i100 <- preprocess('i100.csv', dateformat='%Y/%m/%d', index=TRUE)
 tj100 <- preprocess('tj100.csv', index=TRUE)
 hs300 <- preprocess('hs300.csv', index=TRUE)
-plot_index_and_fund('i100', i100)
-plot_index_and_fund('tj100', tj100)
-plot_index_and_fund('hs300', hs300)
+stat_index_and_fund('i100', i100, startDate=as.Date('2015-06-03'))
+stat_index_and_fund('tj100', tj100, startDate=as.Date('2015-06-03'))
+stat_index_and_fund('hs300', hs300)
 ss000001 <- preprocess('ss000001.csv', index=TRUE, fund=FALSE)
 candidate_210004 <- preprocess('candidate_210004.csv')
 candidate_540003 <- preprocess('candidate_540003.csv')
