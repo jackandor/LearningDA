@@ -82,7 +82,7 @@ stat_index_and_fund <- function(name, df, startDate=df[1, "Date"]) {
 i100 <- preprocess('i100.csv', dateformat='%Y/%m/%d', index=TRUE)
 tj100 <- preprocess('tj100.csv', index=TRUE)
 hs300 <- preprocess('hs300.csv', index=TRUE)
-stat_index_and_fund('i100', i100, startDate=as.Date('2015-06-03'))
+#stat_index_and_fund('i100', i100, startDate=as.Date('2015-06-03'))
 #stat_index_and_fund('tj100', tj100, startDate=as.Date('2015-06-03'))
 #stat_index_and_fund('hs300', hs300)
 ss000001 <- preprocess('ss000001.csv', index=TRUE, fund=FALSE)
