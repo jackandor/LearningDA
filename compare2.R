@@ -26,40 +26,6 @@ preprocess <- function(filename, dateformat='%Y-%m-%d', index=FALSE, fund=TRUE) 
   return(df)
 }
 
-stat_index_and_fund <- function(name, df, startDate=df[1, "Date"]) {
-  index_rate <- paste(name, 'index', 'rate', sep='_')
-  fund_rate <- paste(name[[1]][1], 'fund', 'rate', sep='_')
-  df <- na.omit(df)
-  dev.new()
-  plot(df[,index_rate], type='b', col='red', xaxt='n', xlab='Date', ylab='Rate')
-  lines(df[,fund_rate], type='b', col='blue')
-  axis(1, 1:length(df$Date), labels=df$Date)
-
-  close <- paste(name, 'close', sep='_')
-  net <- paste(name, 'net', sep='_')
-  fix_rate <- paste(name, 'fix', 'rate', sep='_')
-  df[,fix_rate] <- df[,close]/df[,net]
-  dev.new()
-  plot(df[,fix_rate], xaxt='n', xlab='Date', ylab='Rate')
-  axis(1, 1:length(df$Date), labels=df$Date)
-
-  index_income <- paste(name, 'index', 'income', sep='_')
-  fund_income <- paste(name, 'fund', 'income', sep='_')
-  df_index_income <- (df[which(df[,"Date"] >= startDate), close] / df[which(df[,"Date"] == startDate), close] - 1) * 100
-  df_fund_income <- (df[which(df[,"Date"] >= startDate), net] / df[which(df[,"Date"] == startDate), net] - 1) * 100
-  df_date <- df[which(df[,"Date"] >= startDate),"Date"]
-  max4p <- max(df_index_income, df_fund_income)
-  min4p <- min(df_index_income, df_fund_income)
-  dev.new()
-  plot(df_index_income, type='b', col='red', xaxt='n', xlab='Date', ylab='Income', ylim=c(min4p, max4p))
-  lines(df_fund_income, type='b', col='blue')
-  axis(1, 1:length(df_date), labels=df_date)
-
-  tmp <- df[which(df[,"Date"] >= startDate),fund_rate] - df[which(df[,"Date"] >= startDate),index_rate]
-  print(paste(name, 'mean is', mean(tmp)))
-  print(paste(name, 'sd is', sd(tmp)))
-}
-
 fund_income <- function(name, df, startDate=df[1, "Date"]) {
   net <- paste(name, 'net', sep='_')
   fund_income <- paste(name, 'fund', 'income', sep='_')
@@ -80,6 +46,39 @@ index_income <- function(name, df, startDate=df[1, "Date"]) {
   return(newdf)
 }
 
+stat_index_and_fund <- function(name, df, startDate=df[1, "Date"]) {
+  index_rate <- paste(name, 'index', 'rate', sep='_')
+  fund_rate <- paste(name[[1]][1], 'fund', 'rate', sep='_')
+  df <- na.omit(df)
+  dev.new()
+  plot(df[,index_rate], type='b', col='red', xaxt='n', xlab='Date', ylab='Rate')
+  lines(df[,fund_rate], type='b', col='blue')
+  axis(1, 1:length(df$Date), labels=df$Date)
+
+  close <- paste(name, 'close', sep='_')
+  net <- paste(name, 'net', sep='_')
+  fix_rate <- paste(name, 'fix', 'rate', sep='_')
+  df[,fix_rate] <- df[,close]/df[,net]
+  dev.new()
+  plot(df[,fix_rate], xaxt='n', xlab='Date', ylab='Rate')
+  axis(1, 1:length(df$Date), labels=df$Date)
+
+  df_index_income <- index_income(name, df, startDate=startDate)
+  df_fund_income <- fund_income(name, df, startDate=startDate)
+  newdf <- merge(df_index_income, df_fund_income, by='Date')
+
+  max4p <- max(newdf[, 2], newdf[, 3])
+  min4p <- min(newdf[, 2], newdf[, 3])
+  dev.new()
+  plot(newdf[, 2], type='b', col='red', xaxt='n', xlab='Date', ylab='Income', ylim=c(min4p, max4p))
+  lines(newdf[, 3], type='b', col='blue')
+  axis(1, 1:length(newdf$Date), labels=newdf$Date)
+
+  tmp <- df[which(df[,"Date"] >= startDate),fund_rate] - df[which(df[,"Date"] >= startDate),index_rate]
+  print(paste(name, 'mean is', mean(tmp)))
+  print(paste(name, 'sd is', sd(tmp)))
+}
+
 i100 <- preprocess('i100.csv', dateformat='%Y/%m/%d', index=TRUE)
 tj100 <- preprocess('tj100.csv', index=TRUE)
 hs300 <- preprocess('hs300.csv', index=TRUE)
@@ -96,10 +95,11 @@ cmp_df <- merge(cmp_df, fund_income('hs300', hs300, startDate=start), by="Date")
 cmp_df <- merge(cmp_df, index_income('ss000001', ss000001, startDate=start), by="Date")
 cmp_df <- merge(cmp_df, fund_income('candidate_210004', candidate_210004, startDate=start), by="Date")
 cmp_df <- merge(cmp_df, fund_income('candidate_540003', candidate_540003, startDate=start), by="Date")
-dev.new()
 
 max4p <- max(cmp_df$i100_fund_income, cmp_df$tj100_fund_income, cmp_df$hs300_fund_income, cmp_df$ss000001_index_income, cmp_df$candidate_210004_fund_income, cmp_df$candidate_540003_fund_income)
 min4p <- min(cmp_df$i100_fund_income, cmp_df$tj100_fund_income, cmp_df$hs300_fund_income, cmp_df$ss000001_index_income, cmp_df$candidate_210004_fund_income, cmp_df$candidate_540003_fund_income)
+
+dev.new()
 
 plot(cmp_df$i100_fund_income, type='b', col='red', xaxt='n', xlab='Date', ylab='Income', ylim=c(min4p, max4p))
 lines(cmp_df$tj100_fund_income, type='b', col='blue')
