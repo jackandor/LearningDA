@@ -1,29 +1,34 @@
 library(reshape)
 
-preprocess <- function(filename, dateformat='%Y-%m-%d', index=FALSE, fund=TRUE) {
+preprocess_index <- function (filename, name, dateformat='%Y-%m-%d') {
   df <- read.table(filename, sep=',', header=TRUE, stringsAsFactors=FALSE)
   df$Date <- as.Date(df$Date, dateformat)
-  name <- strsplit(filename, '.', fixed=TRUE)
-  close <- paste(name[[1]][1], 'close', sep='_')
-  net <- paste(name[[1]][1], 'net', sep='_')
+  close <- paste(name, 'close', sep='_')
   df <- rename(df, c(Close=close))
-  df <- rename(df, c(Net=net))
-
   df <- df[order(df$Date),]
-  if(index) {
-    index_rate <- paste(name[[1]][1], 'index', 'rate', sep='_')
-    for (i in 2:length(df$Date))
-      df[i, index_rate] <- (df[i, close] / df[i - 1, close] - 1) * 100
-    df[1, index_rate] <- 0
-  }
-
-  if(fund) {
-    fund_rate <- paste(name[[1]][1], 'fund', 'rate', sep='_')
-    for (i in 2:length(df$Date)) df[i, fund_rate] <- (df[i, net] / df[i - 1, net] - 1) * 100
-    df[1, fund_rate] <- 0
-  }
-
+  index_rate <- paste(name, 'index', 'rate', sep='_')
+  for (i in 2:length(df$Date))
+    df[i, index_rate] <- (df[i, close] / df[i - 1, close] - 1) * 100
+  df[1, index_rate] <- 0
   return(df)
+}
+
+preprocess_fund <- function (filename, name, dateformat='%Y-%m-%d') {
+  df <- read.table(filename, sep=',', header=TRUE, stringsAsFactors=FALSE)
+  df$Date <- as.Date(df$Date, dateformat)
+  net <- paste(name, 'net', sep='_')
+  df <- rename(df, c(Net=net))
+  df <- df[order(df$Date),]
+  fund_rate <- paste(name, 'fund', 'rate', sep='_')
+  for (i in 2:length(df$Date)) df[i, fund_rate] <- (df[i, net] / df[i - 1, net] - 1) * 100
+  df[1, fund_rate] <- 0
+  return(df)
+}
+
+preprocess_index_and_fund <- function(index_filename, fund_filename, name, dateformat='%Y-%m-%d') {
+  df_index <- preprocess_index(index_filename, name, dateformat=dateformat)
+  df_fund <- preprocess_fund(fund_filename, name, dateformat=dateformat)
+  return(merge(df_index, df_fund, by='Date'))
 }
 
 fund_income <- function(name, df, startDate=df[1, "Date"]) {
@@ -79,15 +84,15 @@ stat_index_and_fund <- function(name, df, startDate=df[1, "Date"]) {
   print(paste(name, 'sd is', sd(tmp)))
 }
 
-i100 <- preprocess('i100.csv', dateformat='%Y/%m/%d', index=TRUE)
-tj100 <- preprocess('tj100.csv', index=TRUE)
-hs300 <- preprocess('hs300.csv', index=TRUE)
-#stat_index_and_fund('i100', i100, startDate=as.Date('2015-06-03'))
-#stat_index_and_fund('tj100', tj100, startDate=as.Date('2015-06-03'))
-#stat_index_and_fund('hs300', hs300)
-ss000001 <- preprocess('ss000001.csv', index=TRUE, fund=FALSE)
-fund_210004 <- preprocess('fund_210004.csv')
-fund_540003 <- preprocess('fund_540003.csv')
+i100 <- preprocess_index_and_fund('sz399415.csv', 'fund_001113.csv', 'i100')
+tj100 <- preprocess_index_and_fund('h30537.csv', 'fund_001243.csv', 'tj100')
+hs300 <- preprocess_index_and_fund('sz399300.csv', 'fund_000961.csv', 'hs300')
+stat_index_and_fund('i100', i100, startDate=as.Date('2015-06-03'))
+stat_index_and_fund('tj100', tj100, startDate=as.Date('2015-06-03'))
+stat_index_and_fund('hs300', hs300)
+ss000001 <- preprocess_index('ss000001.csv', 'ss000001')
+fund_210004 <- preprocess_fund('fund_210004.csv', 'fund_210004')
+fund_540003 <- preprocess_fund('fund_540003.csv', 'fund_540003')
 start <- as.Date('2015-06-03')
 cmp_df <- fund_income('i100', i100, startDate=start)
 cmp_df <- merge(cmp_df, fund_income('tj100', tj100, startDate=start), by="Date")
