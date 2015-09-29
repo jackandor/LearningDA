@@ -31,23 +31,13 @@ preprocess_index_and_fund <- function(index_filename, fund_filename, name, datef
   return(merge(df_index, df_fund, by='Date'))
 }
 
-fund_income <- function(name, df, startDate=df[1, "Date"]) {
-  net <- paste(name, 'net', sep='_')
-  fund_income <- paste(name, 'fund', 'income', sep='_')
+income <- function(name, typeName1, typeName2, df, startDate=df[1, "Date"]) {
+  var1_name <- paste(name, typeName1, sep='_')
+  var2_name <- paste(name, typeName2, 'income', sep='_')
   df_date <- df[which(df[, "Date"] >= startDate), "Date"]
-  df_fund_income <- (df[which(df[,"Date"] >= startDate), net] / df[which(df[,"Date"] == startDate), net] - 1) * 100
-  newdf <- data.frame(df_date, df_fund_income)
-  newdf <- rename(newdf, c(df_date="Date", df_fund_income=fund_income))
-  return(newdf)
-}
-
-index_income <- function(name, df, startDate=df[1, "Date"]) {
-  close <- paste(name, 'close', sep='_')
-  index_income <- paste(name, 'index', 'income', sep='_')
-  df_date <- df[which(df[, "Date"] >= startDate), "Date"]
-  df_index_income <- (df[which(df[,"Date"] >= startDate), close] / df[which(df[,"Date"] == startDate), close] - 1) * 100
-  newdf <- data.frame(df_date, df_index_income)
-  newdf <- rename(newdf, c(df_date="Date", df_index_income=index_income))
+  df_income <- (df[which(df[,"Date"] >= startDate), var1_name] / df[which(df[,"Date"] == startDate), var1_name] - 1) * 100
+  newdf <- data.frame(df_date, df_income)
+  newdf <- rename(newdf, c(df_date="Date", df_income=var2_name))
   return(newdf)
 }
 
@@ -87,19 +77,19 @@ stat_index_and_fund <- function(name, df, startDate=df[1, "Date"]) {
 i100 <- preprocess_index_and_fund('sz399415.csv', 'fund_001113.csv', 'i100')
 tj100 <- preprocess_index_and_fund('h30537.csv', 'fund_001243.csv', 'tj100')
 hs300 <- preprocess_index_and_fund('sz399300.csv', 'fund_000961.csv', 'hs300')
-stat_index_and_fund('i100', i100, startDate=as.Date('2015-06-03'))
-stat_index_and_fund('tj100', tj100, startDate=as.Date('2015-06-03'))
-stat_index_and_fund('hs300', hs300)
+#stat_index_and_fund('i100', i100, startDate=as.Date('2015-06-03'))
+#stat_index_and_fund('tj100', tj100, startDate=as.Date('2015-06-03'))
+#stat_index_and_fund('hs300', hs300)
 ss000001 <- preprocess_index('ss000001.csv', 'ss000001')
 fund_210004 <- preprocess_fund('fund_210004.csv', 'fund_210004')
 fund_540003 <- preprocess_fund('fund_540003.csv', 'fund_540003')
 start <- as.Date('2015-06-03')
 cmp_df <- fund_income('i100', i100, startDate=start)
-cmp_df <- merge(cmp_df, fund_income('tj100', tj100, startDate=start), by="Date")
-cmp_df <- merge(cmp_df, fund_income('hs300', hs300, startDate=start), by="Date")
-cmp_df <- merge(cmp_df, index_income('ss000001', ss000001, startDate=start), by="Date")
-cmp_df <- merge(cmp_df, fund_income('fund_210004', fund_210004, startDate=start), by="Date")
-cmp_df <- merge(cmp_df, fund_income('fund_540003', fund_540003, startDate=start), by="Date")
+cmp_df <- merge(cmp_df, income('tj100', 'net', 'fund', tj100, startDate=start), by="Date")
+cmp_df <- merge(cmp_df, income('hs300', 'net', 'fund', hs300, startDate=start), by="Date")
+cmp_df <- merge(cmp_df, income('ss000001', 'close', 'index', ss000001, startDate=start), by="Date")
+cmp_df <- merge(cmp_df, income('fund_210004', 'net', 'fund', fund_210004, startDate=start), by="Date")
+cmp_df <- merge(cmp_df, income('fund_540003', 'net', 'fund', fund_540003, startDate=start), by="Date")
 
 max4p <- max(cmp_df$i100_fund_income, cmp_df$tj100_fund_income, cmp_df$hs300_fund_income, cmp_df$ss000001_index_income, cmp_df$fund_210004_fund_income, cmp_df$fund_540003_fund_income)
 min4p <- min(cmp_df$i100_fund_income, cmp_df$tj100_fund_income, cmp_df$hs300_fund_income, cmp_df$ss000001_index_income, cmp_df$fund_210004_fund_income, cmp_df$fund_540003_fund_income)
