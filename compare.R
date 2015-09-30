@@ -1,56 +1,105 @@
 library(reshape)
 
-i100 <- read.table("i100.csv", sep=',', header=TRUE, stringsAsFactors=FALSE)
-i100$Date <- as.Date(i100$Date, "%Y/%m/%d")
-i100 <- rename(i100, c(Close="i100_close", Net="i100_net"))
+preprocess_index <- function (filename, name, dateformat='%Y-%m-%d') {
+  df <- read.table(filename, sep=',', header=TRUE, stringsAsFactors=FALSE)
+  df$Date <- as.Date(df$Date, dateformat)
+  close <- paste(name, 'close', sep='_')
+  df <- rename(df, c(Close=close))
+  df <- df[order(df$Date),]
+  index_rate <- paste(name, 'index', 'rate', sep='_')
+  for (i in 2:length(df$Date))
+    df[i, index_rate] <- (df[i, close] / df[i - 1, close] - 1) * 100
+  df[1, index_rate] <- 0
+  return(df)
+}
 
-tj100 <- read.table("tj100.csv", sep=',', header=TRUE, stringsAsFactors=FALSE)
-tj100$Date <- as.Date(tj100$Date, "%Y-%m-%d")
-tj100 <- rename(tj100, c(Close="tj100_close", Net="tj100_net"))
+preprocess_fund <- function (filename, name, dateformat='%Y-%m-%d') {
+  df <- read.table(filename, sep=',', header=TRUE, stringsAsFactors=FALSE)
+  df$Date <- as.Date(df$Date, dateformat)
+  net <- paste(name, 'net', sep='_')
+  df <- rename(df, c(Net=net))
+  df <- df[order(df$Date),]
+  fund_rate <- paste(name, 'fund', 'rate', sep='_')
+  for (i in 2:length(df$Date)) df[i, fund_rate] <- (df[i, net] / df[i - 1, net] - 1) * 100
+  df[1, fund_rate] <- 0
+  return(df)
+}
 
-hs300 <- read.table("hs300.csv", sep=',', header=TRUE, stringsAsFactors=FALSE)
-hs300$Date <- as.Date(hs300$Date, "%Y-%m-%d")
-hs300 <- rename(hs300, c(Net="hs300_net", Close="hs300_close"))
+preprocess_index_and_fund <- function(index_filename, fund_filename, name, dateformat='%Y-%m-%d') {
+  df_index <- preprocess_index(index_filename, name, dateformat=dateformat)
+  df_fund <- preprocess_fund(fund_filename, name, dateformat=dateformat)
+  return(merge(df_index, df_fund, by='Date'))
+}
 
-ss000001 <- read.table("ss000001.csv", sep=',', header=TRUE, stringsAsFactors=FALSE)
-ss000001$Date <- as.Date(ss000001$Date, "%Y-%m-%d")
-ss000001 <- rename(ss000001, c(Close="ss000001_close"))
+income <- function(name, typeName1, typeName2, df, startDate=df[1, "Date"]) {
+  var1_name <- paste(name, typeName1, sep='_')
+  var2_name <- paste(name, typeName2, 'income', sep='_')
+  df_date <- df[which(df[, "Date"] >= startDate), "Date"]
+  df_income <- (df[which(df[,"Date"] >= startDate), var1_name] / df[which(df[,"Date"] == startDate), var1_name] - 1) * 100
+  newdf <- data.frame(df_date, df_income)
+  newdf <- rename(newdf, c(df_date="Date", df_income=var2_name))
+  return(newdf)
+}
 
-candidate <- read.table("candidate_540003.csv", sep=',', header=TRUE, stringsAsFactors=FALSE)
-candidate$Date <- as.Date(candidate$Date, "%Y-%m-%d")
-candidate <- rename(candidate, c(Net="candidate_net"))
+stat_index_and_fund <- function(name, df, startDate=df[1, "Date"]) {
+  index_rate <- paste(name, 'index', 'rate', sep='_')
+  fund_rate <- paste(name[[1]][1], 'fund', 'rate', sep='_')
+  df <- na.omit(df)
+  dev.new()
+  plot(df[,index_rate], type='b', col='red', xaxt='n', xlab='Date', ylab='Rate')
+  lines(df[,fund_rate], type='b', col='blue')
+  axis(1, 1:length(df$Date), labels=df$Date)
 
+  close <- paste(name, 'close', sep='_')
+  net <- paste(name, 'net', sep='_')
+  fix_rate <- paste(name, 'fix', 'rate', sep='_')
+  df[,fix_rate] <- df[,close]/df[,net]
+  dev.new()
+  plot(df[,fix_rate], xaxt='n', xlab='Date', ylab='Rate')
+  axis(1, 1:length(df$Date), labels=df$Date)
 
-cmp_df <- merge(i100, tj100, by='Date')
-cmp_df <- merge(cmp_df, hs300, by='Date')
-cmp_df <- merge(cmp_df, ss000001, by='Date')
-cmp_df <- merge(cmp_df, candidate, by='Date')
+  df_index_income <- index_income(name, df, startDate=startDate)
+  df_fund_income <- fund_income(name, df, startDate=startDate)
+  newdf <- merge(df_index_income, df_fund_income, by='Date')
 
-cmp_df <- na.omit(cmp_df)
+  max4p <- max(newdf[, 2], newdf[, 3])
+  min4p <- min(newdf[, 2], newdf[, 3])
+  dev.new()
+  plot(newdf[, 2], type='b', col='red', xaxt='n', xlab='Date', ylab='Income', ylim=c(min4p, max4p))
+  lines(newdf[, 3], type='b', col='blue')
+  axis(1, 1:length(newdf$Date), labels=newdf$Date)
 
-cmp_df <- cmp_df[order(cmp_df$Date),]
+  tmp <- df[which(df[,"Date"] >= startDate),fund_rate] - df[which(df[,"Date"] >= startDate),index_rate]
+  print(paste(name, 'mean is', mean(tmp)))
+  print(paste(name, 'sd is', sd(tmp)))
+}
 
-start <- 1
+i100 <- preprocess_index_and_fund('sz399415.csv', 'fund_001113.csv', 'i100')
+tj100 <- preprocess_index_and_fund('h30537.csv', 'fund_001243.csv', 'tj100')
+hs300 <- preprocess_index_and_fund('sz399300.csv', 'fund_000961.csv', 'hs300')
+#stat_index_and_fund('i100', i100, startDate=as.Date('2015-06-03'))
+#stat_index_and_fund('tj100', tj100, startDate=as.Date('2015-06-03'))
+#stat_index_and_fund('hs300', hs300)
+ss000001 <- preprocess_index('ss000001.csv', 'ss000001')
+fund_210004 <- preprocess_fund('fund_210004.csv', 'fund_210004')
+fund_540003 <- preprocess_fund('fund_540003.csv', 'fund_540003')
+start <- as.Date('2015-06-03')
+cmp_df <- fund_income('i100', i100, startDate=start)
+cmp_df <- merge(cmp_df, income('tj100', 'net', 'fund', tj100, startDate=start), by="Date")
+cmp_df <- merge(cmp_df, income('hs300', 'net', 'fund', hs300, startDate=start), by="Date")
+cmp_df <- merge(cmp_df, income('ss000001', 'close', 'index', ss000001, startDate=start), by="Date")
+cmp_df <- merge(cmp_df, income('fund_210004', 'net', 'fund', fund_210004, startDate=start), by="Date")
+cmp_df <- merge(cmp_df, income('fund_540003', 'net', 'fund', fund_540003, startDate=start), by="Date")
 
-cmp_df$i100_index_income <- (cmp_df$i100_close / cmp_df[start, 'i100_close'] - 1) * 100
-cmp_df$i100_fund_income <- (cmp_df$i100_net /cmp_df[start, 'i100_net'] - 1) * 100
-cmp_df$tj100_index_income <- (cmp_df$tj100_close / cmp_df[start, 'tj100_close'] - 1) * 100
-cmp_df$tj100_fund_income <- (cmp_df$tj100_net / cmp_df[start, 'tj100_net'] - 1) * 100
-cmp_df$hs300_index_income <-(cmp_df$hs300_close / cmp_df[start, 'hs300_close'] - 1) * 100
-cmp_df$hs300_fund_income <- (cmp_df$hs300_net / cmp_df[start, 'hs300_net'] - 1) * 100
-cmp_df$ss000001_index_income <- (cmp_df$ss000001_close / cmp_df[start, 'ss000001_close'] - 1) * 100
-cmp_df$candidate_fun_income <- (cmp_df$candidate_net / cmp_df[start, 'candidate_net'] - 1) * 100
+max4p <- max(cmp_df$i100_fund_income, cmp_df$tj100_fund_income, cmp_df$hs300_fund_income, cmp_df$ss000001_index_income, cmp_df$fund_210004_fund_income, cmp_df$fund_540003_fund_income)
+min4p <- min(cmp_df$i100_fund_income, cmp_df$tj100_fund_income, cmp_df$hs300_fund_income, cmp_df$ss000001_index_income, cmp_df$fund_210004_fund_income, cmp_df$fund_540003_fund_income)
 
+dev.new()
 
-max4p <- max(cmp_df$i100_index_income, cmp_df$i100_fund_income, cmp_df$tj100_index_income, cmp_df$tj100_fund_income, cmp_df$hs300_index_income, cmp_df$hs300_fund_income, cmp_df$ss000001_index_income, cmp_df$candidate_fun_income)
-min4p <- min(cmp_df$i100_index_income, cmp_df$i100_fund_income, cmp_df$tj100_index_income, cmp_df$tj100_fund_income, cmp_df$hs300_index_income, cmp_df$hs300_fund_income, cmp_df$ss000001_index_income, cmp_df$candidate_fun_income)
-
-plot(cmp_df$i100_index_income, type='b', col='red', xaxt='n', xlab='Date', ylab='Income', ylim=c(min4p, max4p))
-lines(cmp_df$tj100_index_income, type='b', col='blue')
-lines(cmp_df$i100_fund_income, type='b', col='pink')
-lines(cmp_df$tj100_fund_income, type='b', col='grey')
-lines(cmp_df$hs300_index_income, type='b', col='maroon')
+plot(cmp_df$i100_fund_income, type='b', col='red', xaxt='n', xlab='Date', ylab='Income', ylim=c(min4p, max4p))
+lines(cmp_df$tj100_fund_income, type='b', col='blue')
 lines(cmp_df$hs300_fund_income, type='b', col='yellow')
 lines(cmp_df$ss000001_index_income, type='b', col='green')
-lines(cmp_df$candidate_fun_income, type='b', col='black')
+lines(cmp_df$fund_210004_fund_income, type='b', col='grey')
+lines(cmp_df$fund_540003_fund_income, type='b', col='black')
 axis(1, 1:length(cmp_df$Date), labels=cmp_df$Date)
