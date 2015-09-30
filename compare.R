@@ -74,6 +74,22 @@ stat_index_and_fund <- function(name, df, startDate=df[1, "Date"]) {
   print(paste(name, 'sd is', sd(tmp)))
 }
 
+myFundIncome <- function(df, fund, fundCode, netName) {
+  fundAmount <- paste(fundCode, 'Amount', sep='_')
+  fundInvestment <- paste(fundCode, 'Investment', sep='_')
+  myfund_income <- paste(fundCode, 'myfund_income', sep='_')
+  myfund_investment <- paste(fundCode, 'myfund_investment', sep='_')
+  myfund_income_rate <- paste(fundCode, 'myfund_income_rate', sep='_')
+  for (i in 1:length(df$Date)) {
+    tmp <- fund[fund$Date <= df[i,'Date'], ]
+    df[i, myfund_income] <- (tmp[order(tmp$Date, decreasing=T),][1, fundAmount] * df[i, netName])
+    df[i, myfund_investment] <- tmp[order(tmp$Date, decreasing=T),][1, fundInvestment]
+    df[i, myfund_income_rate] <- (df[i, myfund_income] / df[i, myfund_investment] - 1) * 100
+    if (is.nan(df[i, myfund_income_rate])) df[i, myfund_income_rate] <- 0
+  }
+  return(df)
+}
+
 i100 <- preprocess_index_and_fund('sz399415.csv', 'fund_001113.csv', 'i100')
 tj100 <- preprocess_index_and_fund('h30537.csv', 'fund_001243.csv', 'tj100')
 hs300 <- preprocess_index_and_fund('sz399300.csv', 'fund_000961.csv', 'hs300')
@@ -91,12 +107,42 @@ cmp_df <- merge(cmp_df, income('ss000001', 'close', 'index', ss000001, startDate
 cmp_df <- merge(cmp_df, income('fund_210004', 'net', 'fund', fund_210004, startDate=start), by="Date")
 cmp_df <- merge(cmp_df, income('fund_540003', 'net', 'fund', fund_540003, startDate=start), by="Date")
 
+net_df <- i100[, c('Date', 'i100_net')]
+net_df <- merge(net_df, tj100[, c('Date', 'tj100_net')], by='Date')
+net_df <- merge(net_df, hs300[, c('Date', 'hs300_net')], by='Date')
+net_df <- na.omit(net_df)
+
+#calculate my fund income
+myfund <- read.table('myfund.csv', sep=',', header=TRUE, stringsAsFactors=FALSE)
+myfund$Fund <- sprintf('%06d', myfund$Fund)
+myfund$Fund <- as.factor(myfund$Fund)
+md <- melt(myfund, id=(c('Date', 'Fund')))
+tmp <- cast(md, Date~Fund+variable, sum)
+tmp[,c('000961_Amount')] <- cumsum(tmp[,c('000961_Amount')])
+tmp[,c('001113_Amount')] <- cumsum(tmp[,c('001113_Amount')])
+tmp[,c('001243_Amount')] <- cumsum(tmp[,c('001243_Amount')])
+tmp[,c('000961_Investment')] <- cumsum(tmp[,c('000961_Investment')])
+tmp[,c('001113_Investment')] <- cumsum(tmp[,c('001113_Investment')])
+tmp[,c('001243_Investment')] <- cumsum(tmp[,c('001243_Investment')])
+myfund <- tmp
+
+hs300_myfund_income_rate <- myFundIncome(hs300, tmp, '000961', 'hs300_net')
+print(paste('hs300 fund income rate is:', hs300_myfund_income_rate[length(hs300_myfund_income_rate$Date),'000961_myfund_income_rate']))
+cmp_df <- merge(cmp_df, hs300_myfund_income_rate[, c('Date', '000961_myfund_income_rate')], by="Date")
+i100_myfund_income_rate <- myFundIncome(i100, tmp, '001113', 'i100_net')
+print(paste('i100 fund income rate is:', i100_myfund_income_rate[length(i100_myfund_income_rate$Date),'001113_myfund_income_rate']))
+cmp_df <- merge(cmp_df, i100_myfund_income_rate[, c('Date', '001113_myfund_income_rate')], by="Date")
+tj100_myfund_income_rate <- myFundIncome(tj100, tmp, '001243', 'tj100_net')
+print(paste('tj100 fund income rate is:', tj100_myfund_income_rate[length(tj100_myfund_income_rate$Date),'001243_myfund_income_rate']))
+cmp_df <- merge(cmp_df, tj100_myfund_income_rate[, c('Date', '001243_myfund_income_rate')], by="Date")
+
+#plot all income
 max4p <- max(cmp_df$i100_fund_income, cmp_df$tj100_fund_income, cmp_df$hs300_fund_income, cmp_df$ss000001_index_income, cmp_df$fund_210004_fund_income, cmp_df$fund_540003_fund_income)
 min4p <- min(cmp_df$i100_fund_income, cmp_df$tj100_fund_income, cmp_df$hs300_fund_income, cmp_df$ss000001_index_income, cmp_df$fund_210004_fund_income, cmp_df$fund_540003_fund_income)
 
 dev.new()
 
-plot(cmp_df$i100_fund_income, type='b', col='red', xaxt='n', xlab='Date', ylab='Income', ylim=c(min4p, max4p))
+plot(cmp_df$i100_fund_income, type='b', col='violet', xaxt='n', xlab='Date', ylab='Income', ylim=c(min4p, max4p))
 lines(cmp_df$tj100_fund_income, type='b', col='blue')
 lines(cmp_df$hs300_fund_income, type='b', col='yellow')
 lines(cmp_df$ss000001_index_income, type='b', col='green')
