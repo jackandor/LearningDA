@@ -1,5 +1,9 @@
 library(reshape)
 
+#set work directory automatically
+script_dir <- paste(strsplit(dirname(sys.frame(1)$ofile), '/', fixed=T)[[1]], collapse='/')
+setwd(script_dir)
+
 preprocess_index <- function (filename, name, dateformat='%Y-%m-%d') {
   df <- read.table(filename, sep=',', header=TRUE, stringsAsFactors=FALSE)
   df$Date <- as.Date(df$Date, dateformat)
