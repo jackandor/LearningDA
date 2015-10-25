@@ -115,6 +115,7 @@ hs300 <- preprocess_index_and_fund('sz399300.csv', 'fund_000961.csv', 'hs300')
 ss000001 <- preprocess_index('ss000001.csv', 'ss000001')
 fund_210004 <- preprocess_fund('fund_210004.csv', 'fund_210004')
 fund_540003 <- preprocess_fund('fund_540003.csv', 'fund_540003')
+fund_001210 <- preprocess_fund('fund_001210.csv', 'fund_001210')
 start <- as.Date('2015-06-03')
 cmp_df <- income('i100', 'net', 'fund', i100, startDate=start)
 cmp_df <- merge(cmp_df, income('tj100', 'net', 'fund', tj100, startDate=start), by="Date")
@@ -122,6 +123,7 @@ cmp_df <- merge(cmp_df, income('hs300', 'net', 'fund', hs300, startDate=start), 
 cmp_df <- merge(cmp_df, income('ss000001', 'close', 'index', ss000001, startDate=start), by="Date")
 cmp_df <- merge(cmp_df, income('fund_210004', 'net', 'fund', fund_210004, startDate=start), by="Date")
 cmp_df <- merge(cmp_df, income('fund_540003', 'net', 'fund', fund_540003, startDate=start), by="Date")
+cmp_df <- merge(cmp_df, income('fund_001210', 'net', 'fund', fund_001210, startDate=start), by='Date')
 
 net_df <- i100[, c('Date', 'i100_net')]
 net_df <- merge(net_df, tj100[, c('Date', 'tj100_net')], by='Date')
@@ -136,10 +138,12 @@ md <- melt(myfund, id=(c('Date', 'Fund')))
 tmp <- cast(md, Date~Fund+variable, sum)
 tmp[,c('000961_Amount')] <- cumsum(tmp[,c('000961_Amount')])
 tmp[,c('001113_Amount')] <- cumsum(tmp[,c('001113_Amount')])
+tmp[,c('001210_Amount')] <- cumsum(tmp[,c('001210_Amount')])
 tmp[,c('001243_Amount')] <- cumsum(tmp[,c('001243_Amount')])
 tmp[,c('000961_Investment')] <- cumsum(tmp[,c('000961_Investment')])
 tmp[,c('001113_Investment')] <- cumsum(tmp[,c('001113_Investment')])
 tmp[,c('001243_Investment')] <- cumsum(tmp[,c('001243_Investment')])
+tmp[,c('001210_Investment')] <- cumsum(tmp[,c('001210_Investment')])
 myfund <- tmp
 
 hs300_myfund_income_rate <- myFundIncome(hs300, tmp, '000961', 'hs300_net')
@@ -151,9 +155,13 @@ cmp_df <- merge(cmp_df, i100_myfund_income_rate[, c('Date', '001113_myfund_incom
 tj100_myfund_income_rate <- myFundIncome(tj100, tmp, '001243', 'tj100_net')
 print(paste('tj100 fund income rate is:', tj100_myfund_income_rate[length(tj100_myfund_income_rate$Date),'001243_myfund_income_rate']))
 cmp_df <- merge(cmp_df, tj100_myfund_income_rate[, c('Date', '001243_myfund_income_rate')], by="Date")
+fund_001210_myfund_income_rate <- myFundIncome(fund_001210, tmp, '001210', 'fund_001210_net')
+print(paste('fund_001210 fund income rate is:', fund_001210_myfund_income_rate[length(fund_001210_myfund_income_rate$Date), '001210_myfund_income_rate']))
+cmp_df <- merge(cmp_df, fund_001210_myfund_income_rate[, c('Date', '001210_myfund_income_rate')])
 
 myfund_all <- merge(hs300_myfund_income_rate, i100_myfund_income_rate, by='Date')
 myfund_all <- merge(myfund_all, tj100_myfund_income_rate, by='Date')
+myfund_all <- merge(myfund_all, fund_001210_myfund_income_rate, by="Date")
 myfund_all <- na.omit(myfund_all)
 
 myfund_all_income_rate <- (myFundSum(myfund_all, 'income')[, 'myfund_all_income'] / myFundSum(myfund_all, 'investment')[, 'myfund_all_investment'] - 1) * 100
@@ -161,8 +169,8 @@ myfund_all <- cbind(myfund_all, myfund_all_income_rate)
 cmp_df <- merge(cmp_df, myfund_all[, c('Date', 'myfund_all_income_rate')], by="Date")
 
 #plot all income
-max4p <- max(cmp_df$i100_fund_income, cmp_df$tj100_fund_income, cmp_df$hs300_fund_income, cmp_df$ss000001_index_income, cmp_df$fund_210004_fund_income, cmp_df$fund_540003_fund_income, cmp_df$myfund_all_income_rate)
-min4p <- min(cmp_df$i100_fund_income, cmp_df$tj100_fund_income, cmp_df$hs300_fund_income, cmp_df$ss000001_index_income, cmp_df$fund_210004_fund_income, cmp_df$fund_540003_fund_income, cmp_df$myfund_all_income_rate)
+max4p <- max(cmp_df$i100_fund_income, cmp_df$tj100_fund_income, cmp_df$hs300_fund_income, cmp_df$ss000001_index_income, cmp_df$fund_210004_fund_income, cmp_df$fund_540003_fund_income, cmp_df$fund_001210_fund_income, cmp_df$myfund_all_income_rate)
+min4p <- min(cmp_df$i100_fund_income, cmp_df$tj100_fund_income, cmp_df$hs300_fund_income, cmp_df$ss000001_index_income, cmp_df$fund_210004_fund_income, cmp_df$fund_540003_fund_income, cmp_df$fund_001210_fund_income, cmp_df$myfund_all_income_rate)
 
 dev.new()
 
@@ -172,5 +180,6 @@ lines(cmp_df$hs300_fund_income, type='b', col='yellow')
 lines(cmp_df$ss000001_index_income, type='b', col='green')
 lines(cmp_df$fund_210004_fund_income, type='b', col='grey')
 lines(cmp_df$fund_540003_fund_income, type='b', col='black')
+lines(cmp_df$fund_001210_fund_income, type='b', col='tan1')
 lines(cmp_df$myfund_all_income_rate, type='b', col='red')
 axis(1, 1:length(cmp_df$Date), labels=cmp_df$Date)
