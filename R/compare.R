@@ -168,6 +168,8 @@ myfund_all_income_rate <- (myFundSum(myfund_all, 'income')[, 'myfund_all_income'
 myfund_all <- cbind(myfund_all, myfund_all_income_rate)
 cmp_df <- merge(cmp_df, myfund_all[, c('Date', 'myfund_all_income_rate')], by="Date")
 
+print(paste('all my funds income rate is:', myfund_all[length(myfund_all$myfund_all_income_rate), 'myfund_all_income_rate']))
+
 #plot all income
 max4p <- max(cmp_df$i100_fund_income, cmp_df$tj100_fund_income, cmp_df$hs300_fund_income, cmp_df$ss000001_index_income, cmp_df$fund_210004_fund_income, cmp_df$fund_540003_fund_income, cmp_df$fund_001210_fund_income, cmp_df$myfund_all_income_rate)
 min4p <- min(cmp_df$i100_fund_income, cmp_df$tj100_fund_income, cmp_df$hs300_fund_income, cmp_df$ss000001_index_income, cmp_df$fund_210004_fund_income, cmp_df$fund_540003_fund_income, cmp_df$fund_001210_fund_income, cmp_df$myfund_all_income_rate)
