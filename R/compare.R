@@ -98,7 +98,9 @@ myFundSum <- function(df, name) {
   hs300_myfund <- paste('000961', 'myfund', name, sep='_')
   i100_myfund <- paste('001113', 'myfund', name, sep='_')
   tj100_myfund <- paste('001243', 'myfund', name, sep='_')
-  tmp <- df[, c(hs300_myfund, i100_myfund, tj100_myfund)]
+  fund_001210 <- paste('001210', 'myfund', name, sep='_')
+  fund_540003 <- paste('540003', 'myfund', name, sep='_')
+  tmp <- df[, c(hs300_myfund, i100_myfund, tj100_myfund, fund_001210, fund_540003)]
   t <- apply(tmp, 1, FUN=sum)
   df <- cbind(df, t)
   vname <- paste('myfund', 'all', name, sep='_')
@@ -140,10 +142,12 @@ tmp[,c('000961_Amount')] <- cumsum(tmp[,c('000961_Amount')])
 tmp[,c('001113_Amount')] <- cumsum(tmp[,c('001113_Amount')])
 tmp[,c('001210_Amount')] <- cumsum(tmp[,c('001210_Amount')])
 tmp[,c('001243_Amount')] <- cumsum(tmp[,c('001243_Amount')])
+tmp[,c('540003_Amount')] <- cumsum(tmp[,c('540003_Amount')])
 tmp[,c('000961_Investment')] <- cumsum(tmp[,c('000961_Investment')])
 tmp[,c('001113_Investment')] <- cumsum(tmp[,c('001113_Investment')])
 tmp[,c('001243_Investment')] <- cumsum(tmp[,c('001243_Investment')])
 tmp[,c('001210_Investment')] <- cumsum(tmp[,c('001210_Investment')])
+tmp[,c('540003_Investment')] <- cumsum(tmp[,c('540003_Investment')])
 myfund <- tmp
 
 hs300_myfund_income_rate <- myFundIncome(hs300, tmp, '000961', 'hs300_net')
@@ -158,10 +162,14 @@ cmp_df <- merge(cmp_df, tj100_myfund_income_rate[, c('Date', '001243_myfund_inco
 fund_001210_myfund_income_rate <- myFundIncome(fund_001210, tmp, '001210', 'fund_001210_net')
 print(paste('fund_001210 fund income rate is:', fund_001210_myfund_income_rate[length(fund_001210_myfund_income_rate$Date), '001210_myfund_income_rate']))
 cmp_df <- merge(cmp_df, fund_001210_myfund_income_rate[, c('Date', '001210_myfund_income_rate')])
+fund_540003_myfund_income_rate <- myFundIncome(fund_540003, tmp, '540003', 'fund_540003_net')
+print(paste('fund_540003 fund income rate is:', fund_540003_myfund_income_rate[length(fund_540003_myfund_income_rate$Date), '540003_myfund_income_rate']))
+cmp_df <- merge(cmp_df, fund_540003_myfund_income_rate[, c('Date', '540003_myfund_income_rate')])
 
 myfund_all <- merge(hs300_myfund_income_rate, i100_myfund_income_rate, by='Date')
 myfund_all <- merge(myfund_all, tj100_myfund_income_rate, by='Date')
 myfund_all <- merge(myfund_all, fund_001210_myfund_income_rate, by="Date")
+myfund_all <- merge(myfund_all, fund_540003_myfund_income_rate, by='Date')
 myfund_all <- na.omit(myfund_all)
 
 myfund_all_income_rate <- (myFundSum(myfund_all, 'income')[, 'myfund_all_income'] / myFundSum(myfund_all, 'investment')[, 'myfund_all_investment'] - 1) * 100
